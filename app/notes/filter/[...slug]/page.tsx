@@ -1,9 +1,11 @@
 import { fetchNotes } from "@/lib/api";
 import Link from "next/link";
 
-export default async function FilteredNotesPage({ params }: { params: { slug?: string[] } }) {
-  const tag = params.slug?.[0];
+export default async function FilteredNotesPage({ params }: { params: Promise<{ slug?: string[] }> }) {
+  const { slug } = await params;
+  const tag = slug?.[0];
   const isAll = !tag || tag === "all";
+
   const res = await fetchNotes(isAll ? "" : tag);
 
   return (
