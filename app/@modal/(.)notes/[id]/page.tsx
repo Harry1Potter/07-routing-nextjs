@@ -1,31 +1,34 @@
-"use client";
+import {
+  HydrationBoundary,
+  QueryClient,
+  dehydrate,
+} from '@tanstack/react-query';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Modal from "@/components/Modal/Modal";
-import { fetchNoteById } from "@/lib/api";
-import type { Note } from "@/types/note";
+import { fetchNoteById } from '@/lib/api';
+import NotePreviewClient from './NotePreview.client';
 
-export default function NotePreview({ params }: { params: { id: string } }) {
-  const router = useRouter();
-  const [note, setNote] = useState<Note | null>(null);
+//===========================================================================
 
-  useEffect(() => {
-    fetchNoteById(params.id).then(setNote);
-  }, [params.id]);
+interface NotePreviewProps {
+  params: Promise<{ id: string }>;
+}
 
-  if (!note) return null;
+//===========================================================================
+
+async function NotePreview({ params }: NotePreviewProps) {
+  const { id } = await params;
+  const queryClient = new QueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ['note', id],
+    queryFn: () => fetchNoteById(id),
+  });
 
   return (
-    <Modal onClose={() => router.back()}>
-      <h2>{note.title}</h2>
-      <p>{note.content}</p>
-      <p>
-        <strong>Tag:</strong> {note.tag}
-      </p>
-      <p>
-        <small>Created: {new Date(note.createdAt).toLocaleString()}</small>
-      </p>
-    </Modal>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <NotePreviewClient />
+    </HydrationBoundary>
   );
 }
+
+export default NotePreview;

@@ -1,39 +1,56 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Modal from "@/components/Modal/Modal";
 import { fetchNoteById } from "@/lib/api";
-import type { Note } from "@/types/note";
+import css from "./NotePreview.module.css";
+import { useQuery } from "@tanstack/react-query";
 
-interface Props {
-  params: { id: string };
-}
-
-export default function NotePreview({ params }: Props) {
+function NotePreviewClient() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [note, setNote] = useState<Note | null>(null);
 
-  useEffect(() => {
-    const loadNote = async () => {
-      const data = await fetchNoteById(params.id);
-      setNote(data);
-    };
-    loadNote();
-  }, [params.id]);
+  const {
+    data: note,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["note", id],
+    queryFn: () => fetchNoteById(id!),
+    enabled: Boolean(id),
+    refetchOnMount: false,
+  });
 
-  if (!note) return null;
+  const close = () => router.back();
 
   return (
-    <Modal onClose={() => router.back()}>
-      <h2>{note.title}</h2>
-      <p>{note.content}</p>
-      <p>
-        <strong>Tag:</strong> {note.tag}
-      </p>
-      <p>
-        <small>Created: {new Date(note.createdAt).toLocaleString()}</small>
-      </p>
+    <Modal onClose={close}>
+      <div className={css.container}>
+        {isLoading ? (
+          <p className={css.isLoading}>Loading, please wait...</p>
+        ) : isError || !note ? (
+          <p className={css.isError}>Something went wrong.</p>
+        ) : (
+          <>
+            <div className={css.item}>
+              <div className={css.header}>
+                <h2 className={css.title}>{note.title}</h2>
+              </div>
+              <p className={css.content}>{note.content}</p>
+              <p className={css.date}>
+                {new Date(note.createdAt).toLocaleString()}
+              </p>
+            </div>
+
+            <span className={css.tag}>{note.tag}</span>
+          </>
+        )}
+        <div className={css.action}>
+          <button onClick={close}>Close</button>
+        </div>
+      </div>
     </Modal>
   );
 }
+
+export default NotePreviewClient;

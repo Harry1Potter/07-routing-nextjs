@@ -1,13 +1,15 @@
-type Props = {
+import css from "./LayoutNotes.module.css"
+
+interface NotesLayoutProps {
   children: React.ReactNode;
   sidebar: React.ReactNode;
-};
+}
 
-export default function NotesLayout({ children, sidebar }: Props) {
+export default function NotesLayout({ children, sidebar }: NotesLayoutProps) {
   return (
-    <section style={{ display: "flex", gap: "40px" }}>
-      <aside style={{ width: "200px" }}>{sidebar}</aside>
-      <div style={{ flex: 1 }}>{children}</div>
+    <section className={css.container}>
+      <aside className={css.sidebar}>{sidebar}</aside>
+      <div className={css.notesWrapper}>{children}</div>
     </section>
   );
 }
