@@ -1,5 +1,7 @@
 import axios from "axios";
 import type {NewNoteData, Note } from "../types/note";
+import { QueryClient } from "@tanstack/react-query";
+import { cache } from "react";
 
 axios.defaults.baseURL = "https://notehub-public.goit.study/api";
 
@@ -8,6 +10,10 @@ const token = process.env.NEXT_PUBLIC_NOTEHUB_TOKEN;
 function getAuthHeader() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
+
+const getQueryClient = cache(() => new QueryClient());
+
+export default getQueryClient;
 
 export interface NotesResponse {
   notes: Note[];

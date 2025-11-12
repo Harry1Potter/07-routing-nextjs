@@ -1,23 +1,30 @@
 import { fetchNotes } from "@/lib/api";
-import Link from "next/link";
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
+import getQueryClient from "@/lib/api";
+import NotesClient from "./Notes.client";
 
-export default async function FilteredNotesPage({ params }: { params: Promise<{ slug?: string[] }> }) {
+export default async function FilteredNotesPage({
+  params,
+}: {
+  params: Promise<{ slug: string[] }>;
+}) {
   const { slug } = await params;
-  const tag = slug?.[0];
-  const isAll = !tag || tag === "all";
+  const tag = slug[0] || "all";
 
-  const res = await fetchNotes(isAll ? "" : tag);
+  // Створюємо queryClient на сервері
+  const queryClient = getQueryClient();
+
+  // Префетчимо початкові дані
+  await queryClient.prefetchQuery({
+    queryKey: ["notes", tag, "", 1],
+    queryFn: () => fetchNotes(tag === "all" ? "" : tag, 1),
+  });
+
+  const dehydratedState = dehydrate(queryClient);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>{isAll ? "All Notes" : `Notes tagged: ${tag}`}</h2>
-      <ul>
-        {res.notes.map((note) => (
-          <li key={note.id}>
-            <Link href={`/notes/${note.id}`}>{note.title}</Link>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <HydrationBoundary state={dehydratedState}>
+      <NotesClient tag={tag} />
+    </HydrationBoundary>
   );
 }
