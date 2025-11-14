@@ -20,7 +20,6 @@ export default function NotesClient({ tag }: NotesClientProps) {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // debounce
   useEffect(() => {
     const id = setTimeout(() => {
       setDebouncedSearch(search);
@@ -29,7 +28,6 @@ export default function NotesClient({ tag }: NotesClientProps) {
     return () => clearTimeout(id);
   }, [search]);
 
-  // формуємо фінальне значення пошуку
   const finalSearch =
     debouncedSearch.trim() !== ""
       ? debouncedSearch
@@ -37,7 +35,6 @@ export default function NotesClient({ tag }: NotesClientProps) {
       ? ""
       : tag;
 
-  // ВИКЛИК fetchNotes → лише 1 аргумент, як у тебе вимагає TS
   const { data, isLoading, isError } = useQuery({
     queryKey: ["notes", tag, debouncedSearch, page],
     queryFn: () =>

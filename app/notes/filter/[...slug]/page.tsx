@@ -11,14 +11,17 @@ export default async function FilteredNotesPage({
   const { slug } = await params;
   const tag = slug[0] || "all";
 
-  // Створюємо queryClient на сервері
   const queryClient = getQueryClient();
 
-  // Префетчимо початкові дані
   await queryClient.prefetchQuery({
-    queryKey: ["notes", tag, "", 1],
-    queryFn: () => fetchNotes(tag === "all" ? "" : tag, 1),
-  });
+  queryKey: ["notes", tag, "", 1],
+  queryFn: () =>
+    fetchNotes({
+      search: tag === "all" ? "" : tag,
+      page: 1,
+      perPage: 10,
+    }),
+});
 
   const dehydratedState = dehydrate(queryClient);
 
