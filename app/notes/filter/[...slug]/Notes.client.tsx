@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNotes } from "@/lib/api";
 import type { Note } from "@/types/note";
@@ -17,17 +17,38 @@ interface NotesClientProps {
 export default function NotesClient({ tag }: NotesClientProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // debounce
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  // формуємо фінальне значення пошуку
+  const finalSearch =
+    debouncedSearch.trim() !== ""
+      ? debouncedSearch
+      : tag === "all"
+      ? ""
+      : tag;
+
+  // ВИКЛИК fetchNotes → лише 1 аргумент, як у тебе вимагає TS
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["notes", tag, search, page],
-    queryFn: () => fetchNotes(search || (tag === "all" ? "" : tag), page),
+    queryKey: ["notes", tag, debouncedSearch, page],
+    queryFn: () =>
+      fetchNotes({
+        search: finalSearch,
+        page: page,
+        perPage: 10,
+      }),
   });
 
-  const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPage(1);
-  };
+  const handleSearchChange = (value: string) => setSearch(value);
 
   if (isLoading) return <p>Loading notes...</p>;
   if (isError) return <p>Failed to load notes.</p>;

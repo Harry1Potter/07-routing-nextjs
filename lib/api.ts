@@ -1,5 +1,5 @@
 import axios from "axios";
-import type {NewNoteData, Note } from "../types/note";
+import type { NewNoteData, Note, NoteTag } from "../types/note";
 import { QueryClient } from "@tanstack/react-query";
 import { cache } from "react";
 
@@ -12,25 +12,57 @@ function getAuthHeader() {
 }
 
 const getQueryClient = cache(() => new QueryClient());
-
 export default getQueryClient;
+
+//==========================================================
 
 export interface NotesResponse {
   notes: Note[];
   totalPages: number;
+  totalItems?: number;
+  page?: number;
+  perPage?: number;
 }
 
-export const fetchNotes = async (
+export interface FetchNotesParams {
+  search?: string;
+  tag?: NoteTag | "all";
+  page?: number;
+  perPage?: number;
+}
+
+// ✅ оновлений fetchNotes без 400 Bad Request
+export const fetchNotes = async ({
   search = "",
+  tag = "all",
   page = 1,
-  perPage = 10
-): Promise<NotesResponse> => {
+  perPage = 10,
+}: FetchNotesParams): Promise<NotesResponse> => {
+  const q = search.trim();
+  const params: Record<string, string | number> = {
+    page,
+    perPage,
+  };
+
+  if (q.length >= 2) params.search = q;
+  if (tag && tag !== "all") params.tag = tag;
+
   const res = await axios.get<NotesResponse>("/notes", {
     headers: getAuthHeader(),
-    params: { search, page, perPage },
+    params,
   });
-  return res.data;
+
+  const data = res.data;
+  return {
+    notes: data.notes ?? [],
+    totalPages: data.totalPages ?? 1,
+    totalItems: data.totalItems,
+    page: data.page ?? page,
+    perPage: data.perPage ?? perPage,
+  };
 };
+
+//==========================================================
 
 export const addNote = async (noteData: NewNoteData): Promise<Note> => {
   const res = await axios.post<Note>("/notes", noteData, {
